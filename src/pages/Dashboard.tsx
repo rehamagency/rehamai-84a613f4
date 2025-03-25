@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,7 +162,7 @@ const Dashboard = () => {
                         )}
                       </CardContent>
                       <CardFooter className="flex justify-between">
-                        <Button variant="outline" onClick={() => navigate(`/website/${website.id}`)}>
+                        <Button variant="outline" onClick={() => navigate(`/builder/${website.id}`)}>
                           Edit
                         </Button>
                         <Button onClick={() => navigate(`/website/${website.id}/preview`)}>

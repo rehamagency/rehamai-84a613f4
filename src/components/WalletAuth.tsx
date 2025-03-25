@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react';
 import { X, ExternalLink, AlertCircle } from 'lucide-react';
 import { Glass } from './ui/Glass';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface WalletAuthProps {
   isOpen: boolean;
@@ -10,6 +13,9 @@ interface WalletAuthProps {
 
 const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
   const [mounted, setMounted] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Handle animation when opening/closing
   useEffect(() => {
@@ -56,11 +62,44 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
     }
   ];
 
-  const handleConnect = (walletId: string) => {
-    console.log(`Connecting to ${walletId}`);
-    // Here you would implement actual wallet connection
-    // For demo purposes, we'll just close the modal
-    onClose();
+  const handleConnect = async (walletId: string) => {
+    try {
+      setConnecting(true);
+      console.log(`Connecting to ${walletId}`);
+      
+      // For demo purposes, we'll use Supabase auth instead of actual wallet connection
+      // In a real implementation, this would connect to the actual wallet and use its address
+      
+      // Simulate wallet connection with email login for demo
+      // In a production app, this would be replaced with actual wallet connection code
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: `demo-${walletId}@reham.org`,
+        options: {
+          shouldCreateUser: true
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Connected with ${walletId}. Check your email for the magic link.`,
+      });
+      
+      // In a real wallet implementation, we would redirect immediately
+      // For the demo with email OTP, we just close the modal
+      onClose();
+      
+    } catch (error: any) {
+      console.error('Error connecting wallet:', error);
+      toast({
+        title: "Connection failed",
+        description: error.message || "Failed to connect wallet. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setConnecting(false);
+    }
   };
 
   return (
@@ -82,6 +121,7 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
           <button 
             onClick={onClose}
             className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            disabled={connecting}
           >
             <X className="h-5 w-5" />
           </button>
@@ -91,12 +131,14 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
           {wallets.map((wallet) => (
             <button
               key={wallet.id}
-              onClick={() => !wallet.comingSoon && handleConnect(wallet.id)}
-              disabled={wallet.comingSoon}
+              onClick={() => !wallet.comingSoon && !connecting && handleConnect(wallet.id)}
+              disabled={wallet.comingSoon || connecting}
               className={`flex items-center w-full p-4 rounded-xl transition-all duration-200 ${
                 wallet.comingSoon 
                   ? 'bg-gray-100 cursor-not-allowed opacity-60' 
-                  : 'hover:shadow-md hover:bg-gray-50 hover:border-gray-300'
+                  : connecting
+                    ? 'bg-gray-50 cursor-wait'
+                    : 'hover:shadow-md hover:bg-gray-50 hover:border-gray-300'
               } border border-gray-200`}
             >
               <div className="bg-gray-100 p-2 rounded-full h-10 w-10 flex items-center justify-center mr-3">
@@ -119,6 +161,8 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
                   Coming Soon
                 </span>
+              ) : connecting ? (
+                <div className="w-4 h-4 border-2 border-t-gray-500 rounded-full animate-spin"></div>
               ) : (
                 <ExternalLink className="h-4 w-4 text-gray-400" />
               )}
