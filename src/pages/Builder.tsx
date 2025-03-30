@@ -1,8 +1,8 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { 
   ArrowLeft, Save, PlayCircle, Settings, Layout, 
   PlusCircle, Image, Type, Palette, ChevronRight, Globe, Eye
@@ -14,6 +14,7 @@ import { TemplateSelector } from '@/components/builder/TemplateSelector';
 import { WebsiteSettings } from '@/components/builder/WebsiteSettings';
 import { SectionControl } from '@/components/builder/SectionControl';
 import { WebsitePreview } from '@/components/builder/WebsitePreview';
+import { Loader } from '@/components/ui/Loader';
 import { 
   fetchTemplates, 
   fetchContentBlocks, 
@@ -25,7 +26,6 @@ import {
 } from '@/services/templateService';
 import type { Template, ContentBlock } from '@/services/templateService';
 
-// Available section types
 const defaultSections = [
   { id: 'header', type: 'header', name: 'Header' },
   { id: 'hero', type: 'hero', name: 'Hero' },
@@ -42,7 +42,7 @@ const Builder = () => {
   const isNew = id === 'new';
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [session, setSession] = useState<any>(null);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('design');
@@ -58,45 +58,24 @@ const Builder = () => {
   const [availableSections, setAvailableSections] = useState(defaultSections);
 
   useEffect(() => {
-    // Check if user is logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate('/auth');
-      } else {
-        if (!isNew && id) {
-          loadWebsite(id);
-        }
-        loadTemplates();
-        loadContentBlocks();
-      }
-      setLoading(false);
-    });
-
-    // Setup auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) {
-        navigate('/auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [id, isNew, navigate]);
+    if (!isNew && id) {
+      loadWebsite(id);
+    }
+    loadTemplates();
+    loadContentBlocks();
+    setLoading(false);
+  }, [id, isNew]);
 
   const loadWebsite = async (websiteId: string) => {
     try {
       setLoading(true);
       
-      // Fetch website data
       const websiteData = await fetchWebsite(websiteId);
       if (websiteData) {
         setWebsite(websiteData);
         
-        // Fetch website content
         const content = await fetchWebsiteContent(websiteId);
         if (content && content.length > 0) {
-          // Transform content to our section format
           const loadedSections = content.map((item: any) => ({
             id: `section-${item.id}`,
             type: item.content_type,
@@ -137,7 +116,6 @@ const Builder = () => {
       const data = await fetchContentBlocks();
       setContentBlocks(data);
       
-      // Update available sections based on content blocks
       if (data.length > 0) {
         const blocksAsSections = data.map(block => ({
           id: block.id,
@@ -161,7 +139,7 @@ const Builder = () => {
       return;
     }
 
-    if (!session?.user?.id) {
+    if (!user?.id) {
       toast({
         title: 'Authentication Error',
         description: 'Please log in to save your website.',
@@ -172,16 +150,13 @@ const Builder = () => {
 
     setSaving(true);
     try {
-      // Save the website data
-      const savedWebsite = await saveWebsite(website, session.user.id, isNew);
+      const savedWebsite = await saveWebsite(website, user.id, isNew);
       
       if (savedWebsite) {
-        // If it's a new website, navigate to the edit page
         if (isNew) {
           navigate(`/builder/${savedWebsite.id}`);
         }
         
-        // Save the website content (sections)
         await saveWebsiteContent(savedWebsite.id, sections);
         
         toast({
@@ -211,7 +186,6 @@ const Builder = () => {
       template_id: templateId
     });
     
-    // If we have no sections yet, add default sections based on the template
     if (sections.length === 0) {
       const defaultTemplateSections = [
         {
@@ -246,14 +220,13 @@ const Builder = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-10 h-10 border-4 border-t-web3-blue rounded-full animate-spin"></div>
+        <Loader size="lg" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Builder Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -305,9 +278,7 @@ const Builder = () => {
         </div>
       </header>
 
-      {/* Main Builder Area */}
       <div className="flex-grow flex flex-col lg:flex-row">
-        {/* Left Panel - Controls */}
         <div className="w-full lg:w-1/3 xl:w-1/4 border-r border-gray-200 bg-white p-4 overflow-y-auto">
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full mb-4">
@@ -343,7 +314,6 @@ const Builder = () => {
           </Tabs>
         </div>
         
-        {/* Right Panel - Preview */}
         <div className="flex-grow p-4 bg-gray-50 overflow-y-auto">
           {isNew && activeTab === 'design' && !website.template_id ? (
             <div className="max-w-4xl mx-auto">

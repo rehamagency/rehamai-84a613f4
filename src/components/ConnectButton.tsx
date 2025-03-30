@@ -13,12 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 export const ConnectButton = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -36,8 +38,21 @@ export const ConnectButton = () => {
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out of your account",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Sign out failed",
+        description: "There was an issue signing out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -67,8 +82,11 @@ export const ConnectButton = () => {
           <DropdownMenuItem onClick={() => navigate('/builder/new')}>
             Create Website
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/referral')}>
-            Referral Program
+          <DropdownMenuItem onClick={() => navigate('/templates')}>
+            Templates
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/settings')}>
+            Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
