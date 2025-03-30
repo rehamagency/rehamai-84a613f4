@@ -11,6 +11,7 @@ import Builder from "./pages/Builder";
 import Preview from "./pages/Preview";
 import Referral from "./pages/Referral";
 import About from "./pages/About";
+import Templates from "./pages/Templates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/website/:id/preview" element={<Preview />} />
           <Route path="/referral" element={<Referral />} />
           <Route path="/about" element={<About />} />
+          <Route path="/templates" element={<Templates />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

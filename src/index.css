@@ -82,6 +82,10 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
+  
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
 }
 
 .glass {
@@ -96,6 +100,14 @@
   @apply bg-black/10 backdrop-blur-lg border border-black/10 rounded-2xl shadow-lg;
 }
 
+.dark .glass {
+  @apply bg-gray-900/50 backdrop-blur-lg border border-gray-800 shadow-xl;
+}
+
+.dark .glass-card {
+  @apply bg-gray-800/80 backdrop-blur-md border border-gray-700/50 shadow-xl;
+}
+
 .text-balance {
   text-wrap: balance;
 }
@@ -104,8 +116,16 @@
   @apply bg-clip-text text-transparent bg-gradient-to-r from-web3-blue to-web3-purple;
 }
 
+.dark .text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400;
+}
+
 .button-gradient {
   @apply bg-gradient-to-r from-web3-blue to-web3-purple hover:from-web3-purple hover:to-web3-blue transition-all duration-300;
+}
+
+.dark .button-gradient {
+  @apply bg-gradient-to-r from-blue-500 to-purple-600 hover:from-purple-600 hover:to-blue-500 transition-all duration-300;
 }
 
 /* Custom animations */
@@ -139,4 +159,77 @@
 .reveal.active {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Dark mode card and form styles */
+.dark .card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  @apply bg-gray-800 border-gray-700 text-white placeholder:text-gray-500;
+}
+
+.dark .dropdown-menu {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .dropdown-item {
+  @apply hover:bg-gray-700;
+}
+
+/* Dark mode navbar and footer */
+.dark nav {
+  @apply bg-gray-900 border-gray-800;
+}
+
+.dark footer {
+  @apply bg-gray-900 border-gray-800 text-gray-300;
+}
+
+/* Dashboard specific dark styles */
+.dark .dashboard-sidebar {
+  @apply bg-gray-900 border-gray-800;
+}
+
+.dark .dashboard-content {
+  @apply bg-gray-900;
+}
+
+/* Website builder specific dark styles */
+.dark .builder-sidebar {
+  @apply bg-gray-900 border-gray-800;
+}
+
+.dark .builder-content {
+  @apply bg-gray-900;
+}
+
+.dark .section-item {
+  @apply border-gray-700 bg-gray-800;
+}
+
+.dark .template-item {
+  @apply border-gray-700 bg-gray-800;
+}
+
+/* Device frame styles */
+.device-mobile {
+  @apply rounded-[24px] border-8 shadow-lg mx-auto max-w-[375px];
+}
+
+.device-tablet {
+  @apply rounded-[16px] border-[12px] shadow-lg mx-auto max-w-[768px];
+}
+
+.device-desktop {
+  @apply rounded-lg border shadow-lg w-full;
+}
+
+.dark .device-mobile,
+.dark .device-tablet,
+.dark .device-desktop {
+  @apply border-gray-800 bg-gray-800;
 }
