@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { fetchTemplates } from '@/services/templateService';
 import type { Template } from '@/services/templateService';
 import { useToast } from '@/hooks/use-toast';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 type TemplateCategory = 'all' | 'business' | 'portfolio' | 'blog' | 'ecommerce' | 'nft';
 
@@ -65,8 +66,7 @@ const Templates = () => {
     // Filter by category
     if (category !== 'all') {
       filtered = filtered.filter(template => 
-        template.categories?.includes(category) || 
-        template.type === category
+        template.category === category
       );
     }
 
@@ -124,14 +124,11 @@ const Templates = () => {
               </p>
             </div>
             <div className="flex items-center">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setDarkMode(!darkMode)}
-                className={darkMode ? 'border-gray-700 text-gray-300' : ''}
-              >
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-              </Button>
+              <DarkModeToggle 
+                variant="button" 
+                className="ml-2"
+                size="sm"
+              />
             </div>
           </div>
         </div>
@@ -211,18 +208,18 @@ const Templates = () => {
               >
                 <AspectRatio ratio={16/9}>
                   <img 
-                    src={template.thumbnail || '/placeholder.svg'} 
+                    src={template.thumbnail_url || '/placeholder.svg'} 
                     alt={template.name}
                     className="object-cover w-full h-full"
                   />
                 </AspectRatio>
                 <div className="p-4">
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {template.categories?.map((cat) => (
-                      <Badge key={cat} variant="secondary" className={getCategoryBadgeColor(cat as TemplateCategory)}>
-                        {cat}
+                    {template.category && (
+                      <Badge variant="secondary" className={getCategoryBadgeColor(template.category as TemplateCategory)}>
+                        {template.category}
                       </Badge>
-                    ))}
+                    )}
                   </div>
                   <h3 className="text-lg font-semibold mb-1">{template.name}</h3>
                   <p className={`text-sm mb-4 line-clamp-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -230,7 +227,7 @@ const Templates = () => {
                   </p>
                   <div className="flex justify-between items-center">
                     <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-                      {template.isPremium ? 'Premium' : 'Free'}
+                      {template.is_premium ? 'Premium' : 'Free'}
                     </span>
                     <Button 
                       onClick={() => handleSelectTemplate(template.id)}
