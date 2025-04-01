@@ -14,28 +14,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { LoaderIcon } from '@/components/ui/Loader';
+import { useAuth } from '@/providers/AuthProvider';
 
 export const ConnectButton = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    // Setup auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -58,13 +44,13 @@ export const ConnectButton = () => {
   if (loading) {
     return (
       <Button className="inline-flex items-center justify-center rounded-lg px-6 py-2.5 bg-gray-100 text-gray-400 font-medium">
-        <div className="w-4 h-4 border-2 border-t-gray-500 rounded-full animate-spin mr-2"></div>
+        <LoaderIcon size="sm" className="mr-2" />
         Loading...
       </Button>
     );
   }
 
-  if (session) {
+  if (user) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

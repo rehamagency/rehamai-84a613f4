@@ -1,24 +1,29 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import WalletAuth from '@/components/WalletAuth';
 import AuthForm from '@/components/auth/AuthForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
+import { Loader } from '@/components/ui/Loader';
 
 const Auth = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
+  // Get the intended destination from location state
+  const from = location.state?.from || '/dashboard';
+
   useEffect(() => {
-    // If user is already logged in, redirect to dashboard
+    // If user is already logged in, redirect to intended destination
     if (!loading && user) {
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, from]);
 
   const handleWalletAuth = () => {
     setShowWalletModal(true);
@@ -26,8 +31,9 @@ const Auth = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-10 h-10 border-4 border-t-web3-blue rounded-full animate-spin"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+        <Loader size="lg" color="white" />
+        <p className="mt-4 text-gray-300">Checking authentication status...</p>
       </div>
     );
   }

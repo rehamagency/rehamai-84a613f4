@@ -67,28 +67,51 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
       setConnecting(true);
       console.log(`Connecting to ${walletId}`);
       
-      // For demo purposes, we'll use Supabase auth instead of actual wallet connection
-      // In a real implementation, this would connect to the actual wallet and use its address
+      // For demo purposes, we'll use password auth instead of OTP since email OTP is disabled
+      // In a real implementation, this would connect to the actual wallet
       
-      // Simulate wallet connection with email login for demo
-      // In a production app, this would be replaced with actual wallet connection code
-      const { data, error } = await supabase.auth.signInWithOtp({
-        email: `demo-${walletId}@reham.org`,
-        options: {
-          shouldCreateUser: true
-        }
+      // Generate a pseudo-random password for demo purposes
+      const demoEmail = `demo-${walletId}@reham.org`;
+      const demoPassword = `Demo${Math.random().toString(36).substring(2, 10)}!`;
+      
+      // Check if user exists first
+      const { data: userExists, error: checkError } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
       });
       
-      if (error) throw error;
+      // If user doesn't exist, create one
+      if (checkError && checkError.message.includes('Invalid login credentials')) {
+        const { data, error } = await supabase.auth.signUp({
+          email: demoEmail,
+          password: demoPassword,
+          options: {
+            data: {
+              wallet_type: walletId,
+              wallet_address: `0x${Math.random().toString(36).substring(2, 38)}`,
+            }
+          }
+        });
+        
+        if (error) throw error;
+        
+        // After creating user, sign in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: demoEmail,
+          password: demoPassword,
+        });
+        
+        if (signInError) throw signInError;
+      }
       
       toast({
         title: "Success",
-        description: `Connected with ${walletId}. Check your email for the magic link.`,
+        description: `Connected with ${walletId}!`,
       });
       
-      // In a real wallet implementation, we would redirect immediately
-      // For the demo with email OTP, we just close the modal
+      // Close modal and redirect to dashboard
       onClose();
+      navigate('/dashboard');
       
     } catch (error: any) {
       console.error('Error connecting wallet:', error);

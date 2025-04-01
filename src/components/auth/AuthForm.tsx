@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet, Mail } from 'lucide-react';
+import { Wallet, Mail, Loader2 } from 'lucide-react';
 
 interface AuthFormProps {
   onWalletAuth: () => void;
@@ -19,26 +19,47 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  // Get the intended destination from location state
+  const from = location.state?.from || '/dashboard';
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing fields",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
       
-      navigate('/dashboard');
+      if (data.user) {
+        toast({
+          title: "Welcome back!",
+          description: "You've been successfully signed in",
+        });
+        navigate(from, { replace: true });
+      }
     } catch (error: any) {
+      console.error('Error signing in:', error);
       toast({
-        title: 'Error signing in',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
+        title: "Error signing in",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -47,10 +68,29 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Missing fields",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -60,15 +100,28 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
       
       if (error) throw error;
       
-      toast({
-        title: 'Registration successful',
-        description: 'Please check your email to confirm your account',
-      });
+      if (data.user) {
+        if (data.user.identities?.length === 0) {
+          toast({
+            title: "User already exists",
+            description: "Please use the sign in option instead",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration successful",
+            description: "Account created successfully! You can now sign in.",
+          });
+          // Auto sign in after registration for better UX
+          navigate(from, { replace: true });
+        }
+      }
     } catch (error: any) {
+      console.error('Error signing up:', error);
       toast({
-        title: 'Error signing up',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
+        title: "Error signing up",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -114,15 +167,23 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex justify-between">
+                <Label htmlFor="password">Password</Label>
+                <a href="#" className="text-xs text-blue-500 hover:underline">
+                  Forgot password?
+                </a>
+              </div>
               <Input 
                 id="password" 
                 type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
             </div>
           </CardContent>
@@ -132,7 +193,14 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
               onClick={handleEmailSignIn}
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </Button>
             <Button 
               variant="outline" 
@@ -140,7 +208,14 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
               onClick={handleEmailSignUp}
               disabled={loading}
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </CardFooter>
         </TabsContent>
