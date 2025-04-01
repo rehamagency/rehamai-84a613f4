@@ -2,7 +2,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
-import { Loader } from '@/components/ui/Loader';
+import { LoaderIcon } from '@/components/ui/Loader';
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -31,8 +31,11 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
   if (loading || isVerifying) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <Loader size="lg" />
-        <p className="mt-4 text-gray-500 dark:text-gray-400">Verifying authentication...</p>
+        <LoaderIcon 
+          size="lg" 
+          className="text-web3-blue" 
+          text="Verifying authentication..." 
+        />
       </div>
     );
   }

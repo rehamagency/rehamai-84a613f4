@@ -1,10 +1,11 @@
 
 import { useEffect, useState } from 'react';
-import { X, ExternalLink, AlertCircle } from 'lucide-react';
+import { X, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 import { Glass } from './ui/Glass';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { LoaderIcon } from '@/components/ui/Loader';
 
 interface WalletAuthProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface WalletAuthProps {
 const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
   const [mounted, setMounted] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [currentWallet, setCurrentWallet] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -65,6 +67,7 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
   const handleConnect = async (walletId: string) => {
     try {
       setConnecting(true);
+      setCurrentWallet(walletId);
       console.log(`Connecting to ${walletId}`);
       
       // For demo purposes, we'll use password auth instead of OTP since email OTP is disabled
@@ -110,8 +113,10 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
       });
       
       // Close modal and redirect to dashboard
-      onClose();
-      navigate('/dashboard');
+      setTimeout(() => {
+        onClose();
+        navigate('/dashboard');
+      }, 1000);
       
     } catch (error: any) {
       console.error('Error connecting wallet:', error);
@@ -120,8 +125,11 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
         description: error.message || "Failed to connect wallet. Please try again.",
         variant: "destructive"
       });
+      setCurrentWallet(null);
     } finally {
-      setConnecting(false);
+      setTimeout(() => {
+        setConnecting(false);
+      }, 1000);
     }
   };
 
@@ -159,8 +167,8 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
               className={`flex items-center w-full p-4 rounded-xl transition-all duration-200 ${
                 wallet.comingSoon 
                   ? 'bg-gray-100 cursor-not-allowed opacity-60' 
-                  : connecting
-                    ? 'bg-gray-50 cursor-wait'
+                  : connecting && currentWallet === wallet.id
+                    ? 'bg-gray-50 border-blue-200 shadow-sm'
                     : 'hover:shadow-md hover:bg-gray-50 hover:border-gray-300'
               } border border-gray-200`}
             >
@@ -184,8 +192,15 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">
                   Coming Soon
                 </span>
-              ) : connecting ? (
-                <div className="w-4 h-4 border-2 border-t-gray-500 rounded-full animate-spin"></div>
+              ) : connecting && currentWallet === wallet.id ? (
+                connecting ? (
+                  <div className="flex items-center">
+                    <LoaderIcon size="sm" className="text-blue-500" />
+                    <span className="ml-2 text-sm text-blue-600">Connecting...</span>
+                  </div>
+                ) : (
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                )
               ) : (
                 <ExternalLink className="h-4 w-4 text-gray-400" />
               )}

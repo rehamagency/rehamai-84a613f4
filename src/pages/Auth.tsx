@@ -1,12 +1,11 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import WalletAuth from '@/components/WalletAuth';
 import AuthForm from '@/components/auth/AuthForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
-import { Loader } from '@/components/ui/Loader';
+import { LoaderIcon } from '@/components/ui/Loader';
 
 const Auth = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -32,8 +31,7 @@ const Auth = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-        <Loader size="lg" color="white" />
-        <p className="mt-4 text-gray-300">Checking authentication status...</p>
+        <LoaderIcon size="lg" color="white" text="Checking authentication status..." />
       </div>
     );
   }
