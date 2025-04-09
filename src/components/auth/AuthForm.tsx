@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,9 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AuthFormProps {
   onWalletAuth: () => void;
+  onAuthSuccess: () => void;
 }
 
-const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
+const AuthForm = ({ onWalletAuth, onAuthSuccess }: AuthFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,6 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
   const location = useLocation();
   const { toast } = useToast();
 
-  // Get the intended destination from location state
   const from = location.state?.from || '/dashboard';
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -60,7 +59,7 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
           title: "Welcome back!",
           description: "You've been successfully signed in",
         });
-        navigate(from, { replace: true });
+        onAuthSuccess();
       }
     } catch (error: any) {
       console.error('Error signing in:', error);
@@ -126,8 +125,7 @@ const AuthForm = ({ onWalletAuth }: AuthFormProps) => {
             title: "Registration successful",
             description: "Account created successfully! You can now sign in.",
           });
-          // Auto sign in after registration for better UX
-          navigate(from, { replace: true });
+          onAuthSuccess();
         }
       }
     } catch (error: any) {

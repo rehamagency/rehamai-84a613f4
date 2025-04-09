@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { X, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
 import { Glass } from './ui/Glass';
@@ -10,23 +9,22 @@ import { LoaderIcon } from '@/components/ui/Loader';
 interface WalletAuthProps {
   isOpen: boolean;
   onClose: () => void;
+  onAuthSuccess?: () => void;
 }
 
-const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
+const WalletAuth = ({ isOpen, onClose, onAuthSuccess }: WalletAuthProps) => {
   const [mounted, setMounted] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [currentWallet, setCurrentWallet] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Handle animation when opening/closing
   useEffect(() => {
     if (isOpen) {
       setMounted(true);
     } else {
       const timer = setTimeout(() => {
         setMounted(false);
-        // Reset state when modal closes
         setCurrentWallet(null);
         setConnecting(false);
       }, 300);
@@ -73,20 +71,14 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
       setCurrentWallet(walletId);
       console.log(`Connecting to ${walletId}`);
       
-      // For demo purposes, we'll use password auth instead of OTP since email OTP is disabled
-      // In a real implementation, this would connect to the actual wallet
-      
-      // Generate a pseudo-random password for demo purposes
       const demoEmail = `demo-${walletId}@reham.org`;
       const demoPassword = `Demo${Math.random().toString(36).substring(2, 10)}!`;
       
-      // Check if user exists first
       const { data: userExists, error: checkError } = await supabase.auth.signInWithPassword({
         email: demoEmail,
         password: demoPassword,
       });
       
-      // If user doesn't exist, create one
       if (checkError && checkError.message.includes('Invalid login credentials')) {
         const { data, error } = await supabase.auth.signUp({
           email: demoEmail,
@@ -101,7 +93,6 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
         
         if (error) throw error;
         
-        // After creating user, sign in
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: demoEmail,
           password: demoPassword,
@@ -115,10 +106,13 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
         description: `Connected with ${walletId}!`,
       });
       
-      // Close modal and redirect to dashboard
       setTimeout(() => {
         onClose();
-        navigate('/dashboard');
+        if (onAuthSuccess) {
+          onAuthSuccess();
+        } else {
+          navigate('/dashboard');
+        }
       }, 1000);
       
     } catch (error: any) {
@@ -181,7 +175,6 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
                   alt={`${wallet.name} logo`}
                   className="h-6 w-6"
                   onError={(e) => {
-                    // Fallback for missing images in demo
                     const target = e.target as HTMLImageElement;
                     target.src = 'https://placehold.co/60x60?text=' + wallet.name[0];
                   }}
