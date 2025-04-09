@@ -1,11 +1,12 @@
+
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { 
-  ArrowLeft, Save, PlayCircle, Settings, Layout, 
-  PlusCircle, Image, Type, Palette, ChevronRight, Globe, Eye
+  ArrowLeft, Save, Settings, Layout, 
+  Globe, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { TemplateSelector } from '@/components/builder/TemplateSelector';
 import { WebsiteSettings } from '@/components/builder/WebsiteSettings';
 import { SectionControl } from '@/components/builder/SectionControl';
 import { WebsitePreview } from '@/components/builder/WebsitePreview';
+import { WebsitePublish } from '@/components/builder/WebsitePublish';
 import { Loader } from '@/components/ui/Loader';
 import { 
   fetchTemplates, 
@@ -41,6 +43,7 @@ const Builder = () => {
   const { id } = useParams();
   const isNew = id === 'new';
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -50,12 +53,23 @@ const Builder = () => {
     name: '',
     subdomain: '',
     template_id: null as string | null,
+    published: false,
     settings: {}
   });
   const [templates, setTemplates] = useState<Template[]>([]);
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [sections, setSections] = useState<any[]>([]);
   const [availableSections, setAvailableSections] = useState(defaultSections);
+
+  // Check for template from location state (if coming from templates page)
+  useEffect(() => {
+    if (isNew && location.state?.templateId) {
+      setWebsite(prev => ({
+        ...prev,
+        template_id: location.state.templateId
+      }));
+    }
+  }, [isNew, location.state]);
 
   useEffect(() => {
     if (!isNew && id) {
@@ -217,6 +231,13 @@ const Builder = () => {
     }
   };
 
+  const handlePublishStatusChange = (published: boolean) => {
+    setWebsite({
+      ...website,
+      published
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -255,14 +276,25 @@ const Builder = () => {
             </div>
             <div className="flex items-center space-x-2">
               {!isNew && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate(`/website/${id}/preview`)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => navigate(`/website/${id}/preview`)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Preview
+                  </Button>
+                  
+                  {id && (
+                    <WebsitePublish
+                      websiteId={id}
+                      isPublished={website.published}
+                      subdomain={website.subdomain}
+                      onPublishStatusChange={handlePublishStatusChange}
+                    />
+                  )}
+                </>
               )}
               <Button 
                 size="sm" 
@@ -330,7 +362,6 @@ const Builder = () => {
                   disabled={!website.name || !website.subdomain || saving}
                 >
                   Create Website
-                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>

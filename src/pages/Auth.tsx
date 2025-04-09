@@ -21,12 +21,24 @@ const Auth = () => {
     // If user is already logged in, redirect to intended destination
     if (!loading && user) {
       console.log("User is already authenticated, redirecting to:", from);
+      toast({
+        title: "Already Signed In",
+        description: "You are already signed in",
+      });
       navigate(from, { replace: true });
     }
-  }, [user, loading, navigate, from]);
+  }, [user, loading, navigate, from, toast]);
 
   const handleWalletAuth = () => {
     setShowWalletModal(true);
+  };
+
+  const handleAuthSuccess = () => {
+    toast({
+      title: "Authentication Successful",
+      description: "You have successfully signed in",
+    });
+    navigate(from, { replace: true });
   };
 
   if (loading) {
@@ -46,7 +58,10 @@ const Auth = () => {
             <p className="text-gray-300">The easiest way to build and deploy Web3 websites</p>
           </div>
           
-          <AuthForm onWalletAuth={handleWalletAuth} />
+          <AuthForm 
+            onWalletAuth={handleWalletAuth} 
+            onAuthSuccess={handleAuthSuccess}
+          />
           
           <div className="mt-8 text-center text-gray-400 text-sm">
             <p>By signing up, you agree to our Terms of Service and Privacy Policy</p>
@@ -57,6 +72,7 @@ const Auth = () => {
       <WalletAuth 
         isOpen={showWalletModal} 
         onClose={() => setShowWalletModal(false)} 
+        onAuthSuccess={handleAuthSuccess}
       />
     </div>
   );

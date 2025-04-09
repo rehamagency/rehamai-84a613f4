@@ -186,3 +186,85 @@ export const saveWebsiteContent = async (
     throw error;
   }
 };
+
+// New functions
+
+export const publishWebsite = async (websiteId: string, isPublishing: boolean): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('websites')
+      .update({ published: isPublishing })
+      .eq('id', websiteId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error updating publish status:', error);
+    throw error;
+  }
+};
+
+export const deleteWebsite = async (websiteId: string): Promise<void> => {
+  try {
+    // First delete all website content
+    const { error: contentDeleteError } = await supabase
+      .from('website_content')
+      .delete()
+      .eq('website_id', websiteId);
+
+    if (contentDeleteError) throw contentDeleteError;
+
+    // Then delete the website
+    const { error: websiteDeleteError } = await supabase
+      .from('websites')
+      .delete()
+      .eq('id', websiteId);
+
+    if (websiteDeleteError) throw websiteDeleteError;
+  } catch (error) {
+    console.error('Error deleting website:', error);
+    throw error;
+  }
+};
+
+export const duplicateWebsite = async (websiteId: string, userId: string): Promise<any> => {
+  try {
+    // Fetch original website
+    const website = await fetchWebsite(websiteId);
+    if (!website) throw new Error('Website not found');
+    
+    // Fetch website content
+    const content = await fetchWebsiteContent(websiteId);
+    
+    // Create new website
+    const newWebsiteName = `${website.name} (Copy)`;
+    const newSubdomain = `${website.subdomain}-copy`;
+    
+    const newWebsite = {
+      ...website,
+      id: undefined, // Remove id to create a new record
+      user_id: userId,
+      name: newWebsiteName,
+      subdomain: newSubdomain,
+      published: false,
+      created_at: undefined,
+      updated_at: undefined
+    };
+    
+    const savedWebsite = await saveWebsite(newWebsite, userId, true);
+    
+    if (content.length > 0) {
+      const newContent = content.map(item => ({
+        type: item.content_type,
+        content: item.content,
+        id: `section-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+      }));
+      
+      await saveWebsiteContent(savedWebsite.id, newContent);
+    }
+    
+    return savedWebsite;
+  } catch (error) {
+    console.error('Error duplicating website:', error);
+    throw error;
+  }
+};

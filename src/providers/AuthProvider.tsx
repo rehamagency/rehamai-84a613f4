@@ -39,6 +39,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(null);
           setUser(null);
         }
+        
+        // If event is SIGNED_IN, show welcome toast
+        if (event === 'SIGNED_IN' && session?.user) {
+          toast({
+            title: "Welcome!",
+            description: "You have successfully signed in to Reham Web3",
+          });
+        }
       }
     );
 
@@ -64,6 +72,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out",
+      });
     } catch (error: any) {
       console.error('Error signing out:', error);
       toast({

@@ -1,14 +1,17 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { PlusCircle, LayoutTemplate, BarChart3, Settings, CreditCard } from 'lucide-react';
+import { PlusCircle, BarChart3, Settings, CreditCard } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Glass } from '@/components/ui/Glass';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { WebsitesList } from '@/components/dashboard/WebsitesList';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/providers/AuthProvider';
+import { Loader } from '@/components/ui/Loader';
 
 interface Website {
   id: string;
@@ -20,37 +23,23 @@ interface Website {
 }
 
 const Dashboard = () => {
-  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [websites, setWebsites] = useState<Website[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate('/auth');
-      } else {
-        fetchUserWebsites(session.user.id);
-      }
+    if (user) {
+      fetchUserWebsites(user.id);
+    } else {
       setLoading(false);
-    });
-
-    // Setup auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) {
-        navigate('/auth');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    }
+  }, [user]);
 
   const fetchUserWebsites = async (userId: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('websites')
         .select('*')
@@ -66,6 +55,8 @@ const Dashboard = () => {
         description: 'Failed to load your websites. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,7 +67,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-10 h-10 border-4 border-t-web3-blue rounded-full animate-spin"></div>
+        <Loader size="lg" />
       </div>
     );
   }
@@ -103,7 +94,7 @@ const Dashboard = () => {
           <Tabs defaultValue="websites" className="w-full">
             <TabsList className="mb-8">
               <TabsTrigger value="websites" className="px-4 py-2">
-                <LayoutTemplate className="mr-2 h-4 w-4" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-layout-template mr-2 h-4 w-4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                 My Websites
               </TabsTrigger>
               <TabsTrigger value="analytics" className="px-4 py-2">
@@ -121,57 +112,12 @@ const Dashboard = () => {
             </TabsList>
             
             <TabsContent value="websites" className="space-y-6">
-              {websites.length === 0 ? (
-                <Glass className="p-8 text-center">
-                  <h3 className="text-xl font-medium mb-3">No Websites Yet</h3>
-                  <p className="text-gray-600 mb-6">Create your first Web3 website to get started</p>
-                  <Button 
-                    className="button-gradient text-white"
-                    onClick={handleCreateNewWebsite}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Create New Website
-                  </Button>
-                </Glass>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {websites.map((website) => (
-                    <Card key={website.id}>
-                      <CardHeader>
-                        <CardTitle>{website.name}</CardTitle>
-                        <CardDescription>
-                          {website.published ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Published
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              Draft
-                            </span>
-                          )}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-500 mb-2">
-                          {website.subdomain}.reham.org
-                        </p>
-                        {website.custom_domain && (
-                          <p className="text-sm text-gray-500">
-                            {website.custom_domain}
-                          </p>
-                        )}
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        <Button variant="outline" onClick={() => navigate(`/builder/${website.id}`)}>
-                          Edit
-                        </Button>
-                        <Button onClick={() => navigate(`/website/${website.id}/preview`)}>
-                          View
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
+              {user && (
+                <WebsitesList 
+                  websites={websites} 
+                  userId={user.id}
+                  onWebsitesChange={setWebsites}
+                />
               )}
             </TabsContent>
             
@@ -243,9 +189,9 @@ const Dashboard = () => {
                   <div>
                     <h4 className="text-lg font-medium mb-4">Connected Wallet</h4>
                     <p className="text-gray-600 mb-2">
-                      {session?.user?.id ? (
+                      {user?.id ? (
                         <>
-                          <span className="font-mono">{session.user.id.substring(0, 6)}...{session.user.id.substring(session.user.id.length - 4)}</span>
+                          <span className="font-mono">{user.id.substring(0, 6)}...{user.id.substring(user.id.length - 4)}</span>
                         </>
                       ) : (
                         'No wallet connected'
