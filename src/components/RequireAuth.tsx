@@ -28,6 +28,7 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
     }
   }, [user, loading, navigate, location]);
 
+  // Show a loading indicator while we're verifying auth status
   if (loading || isVerifying) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">

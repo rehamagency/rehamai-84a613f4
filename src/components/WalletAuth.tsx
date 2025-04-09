@@ -26,6 +26,9 @@ const WalletAuth = ({ isOpen, onClose }: WalletAuthProps) => {
     } else {
       const timer = setTimeout(() => {
         setMounted(false);
+        // Reset state when modal closes
+        setCurrentWallet(null);
+        setConnecting(false);
       }, 300);
       return () => clearTimeout(timer);
     }

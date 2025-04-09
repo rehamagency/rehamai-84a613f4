@@ -20,6 +20,7 @@ const Auth = () => {
   useEffect(() => {
     // If user is already logged in, redirect to intended destination
     if (!loading && user) {
+      console.log("User is already authenticated, redirecting to:", from);
       navigate(from, { replace: true });
     }
   }, [user, loading, navigate, from]);

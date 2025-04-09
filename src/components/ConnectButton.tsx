@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, User, LogOut, Settings, LayoutDashboard } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import WalletAuth from './WalletAuth';
 import { Button } from '@/components/ui/button';
 import { 
@@ -19,12 +18,14 @@ import { useAuth } from '@/providers/AuthProvider';
 
 export const ConnectButton = () => {
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
     try {
+      setIsSigningOut(true);
       await signOut();
       toast({
         title: "Signed out successfully",
@@ -38,6 +39,8 @@ export const ConnectButton = () => {
         description: "There was an issue signing out. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSigningOut(false);
     }
   };
 
@@ -79,9 +82,22 @@ export const ConnectButton = () => {
             Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
+          <DropdownMenuItem 
+            onClick={handleSignOut} 
+            className="text-red-500"
+            disabled={isSigningOut}
+          >
+            {isSigningOut ? (
+              <>
+                <LoaderIcon size="sm" className="mr-2" />
+                Signing out...
+              </>
+            ) : (
+              <>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

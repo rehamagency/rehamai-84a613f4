@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   session: Session | null;
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -45,15 +47,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch(error => {
+      console.error('Error getting session:', error);
+      setLoading(false);
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem verifying your session. Please try signing in again.",
+        variant: "destructive"
+      });
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error: any) {
       console.error('Error signing out:', error);
+      toast({
+        title: "Sign out failed",
+        description: error.message || "There was an issue signing out. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
